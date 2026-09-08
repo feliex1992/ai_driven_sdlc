@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/security.schema.json",
+  "title": "AI Security Review Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "findings",
+    "scan_results",
+    "blocking",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/security_finding"
+      }
+    },
+    "scan_results": {
+      "type": "object",
+      "required": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational"
+      ],
+      "properties": {
+        "critical": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medium": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "low": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "informational": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "security_finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "severity",
+        "title",
+        "description",
+        "recommendation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SEC-[0-9]+$"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low",
+            "informational"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "recommendation": {
+          "type": "string"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/analysis.schema.json",
+  "title": "Analysis Contract",
+  "description": "Contract for the Product/System Analyst agent output.",
+  "type": "object",
+
+  "required": [
+    "status",
+    "summary",
+    "requirements",
+    "constraints",
+    "assumptions",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+
+    "summary": {
+      "type": "string"
+    },
+
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "priority"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REQ-[0-9]+$"
+          },
+
+          "description": {
+            "type": "string"
+          },
+
+          "priority": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
+          }
+        }
+      }
+    },
+
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+
+    "findings": {
+      "type": "array"
+    },
+
+    "artifacts": {
+      "type": "array"
+    },
+
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+
+  "additionalProperties": false
+}

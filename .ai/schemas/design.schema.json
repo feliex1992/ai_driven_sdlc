@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/design.schema.json",
+  "title": "AI Architecture Design Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "architecture",
+    "database_changes",
+    "api_changes",
+    "decisions",
+    "trade_offs",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "architecture": {
+      "type": "object",
+      "required": [
+        "components"
+      ],
+      "properties": {
+        "style": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        },
+        "dependency_changes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "database_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/database_change"
+      }
+    },
+    "api_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/api_change"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/decision"
+      }
+    },
+    "trade_offs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "findings": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "required": [
+        "name",
+        "responsibility"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "responsibility": {
+          "type": "string"
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "database_change": {
+      "type": "object",
+      "required": [
+        "type",
+        "description"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "create_table",
+            "alter_table",
+            "drop_table",
+            "add_column",
+            "alter_column",
+            "drop_column",
+            "create_index",
+            "drop_index",
+            "migration",
+            "data_migration",
+            "other"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "table": {
+          "type": "string"
+        },
+        "destructive": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "api_change": {
+      "type": "object",
+      "required": [
+        "method",
+        "path",
+        "description"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "breaking": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "title",
+        "decision",
+        "reason"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

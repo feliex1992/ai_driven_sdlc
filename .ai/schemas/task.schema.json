@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/task.schema.json",
+  "title": "AI Task Planning Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "tasks",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/task"
+      }
+    },
+    "findings": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "description",
+        "type",
+        "priority",
+        "dependencies",
+        "acceptance_criteria"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^TASK-[0-9]+$"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "analysis",
+            "architecture",
+            "database",
+            "development",
+            "testing",
+            "security",
+            "documentation",
+            "deployment",
+            "other"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^TASK-[0-9]+$"
+          }
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "affected_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

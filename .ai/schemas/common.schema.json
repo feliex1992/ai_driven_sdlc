@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/common.schema.json",
+  "title": "AI Agent Common Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": [
+        "severity",
+        "title",
+        "description"
+      ],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low",
+            "info"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "recommendation": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "type"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "document",
+            "code",
+            "test",
+            "report",
+            "schema",
+            "configuration"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

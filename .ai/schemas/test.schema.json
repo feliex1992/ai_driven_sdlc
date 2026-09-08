@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/test.schema.json",
+  "title": "AI Test Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "test_results",
+    "coverage",
+    "gaps",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "test_results": {
+      "type": "object",
+      "required": [
+        "total",
+        "passed",
+        "failed",
+        "skipped"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "line": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "branch": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "method": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "findings": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

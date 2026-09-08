@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: ai-software-factory-context
+Version: 0.1.0
+Summary: STEP 2 - Context Engine for the AI Software Factory
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.0
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"

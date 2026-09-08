@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/implementation.schema.json",
+  "title": "AI Implementation Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "changed_files",
+    "tests",
+    "findings",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/changed_file"
+      }
+    },
+    "tests": {
+      "type": "object",
+      "required": [
+        "executed"
+      ],
+      "properties": {
+        "executed": {
+          "type": "boolean"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "changed_file": {
+      "type": "object",
+      "required": [
+        "path",
+        "change"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "change": {
+          "type": "string",
+          "enum": [
+            "added",
+            "modified",
+            "deleted"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

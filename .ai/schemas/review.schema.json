@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-factory.local/schemas/review.schema.json",
+  "title": "AI Code Review Contract",
+  "type": "object",
+  "required": [
+    "status",
+    "summary",
+    "quality",
+    "findings",
+    "blocking",
+    "recommendations",
+    "artifacts",
+    "requires_human_approval"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed",
+        "needs_approval"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "quality": {
+      "type": "object",
+      "required": [
+        "architecture",
+        "correctness",
+        "maintainability",
+        "performance"
+      ],
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/result"
+        },
+        "correctness": {
+          "$ref": "#/$defs/result"
+        },
+        "maintainability": {
+          "$ref": "#/$defs/result"
+        },
+        "performance": {
+          "$ref": "#/$defs/result"
+        }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array"
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "requires_human_approval": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "result": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "warning",
+        "not_applicable"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
