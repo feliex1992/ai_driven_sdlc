@@ -1,45 +1,31 @@
-"""
-Agent runner stubs for the AI Software Factory.
+r"""
+Agent runner with skill-based execution for the AI Software Factory.
 
-This module provides the agent execution interface that the CLI's `run.py`
-depends on. Today, every agent is a stub — it returns a structured result
-matching the STEP 1.5 JSON contracts but does not invoke an LLM.
-
-When Steps 4-11 land, each stub is replaced with a real agent implementation
-that calls the LLM, validates its output against the corresponding schema,
-and returns evidence.
+This module provides the agent execution interface that the CLI's ``run.py``
+depends on. Today, real skill implementations exist for the analyst stage
+and stubs remain for the rest. When Steps 4-11 land, each stub is replaced
+with a real skill that calls the LLM, validates its output against the
+corresponding schema, and returns evidence.
 
 Design:
-  - AgentKind: enum of all SDLC roles
-  - AgentRunner: holds project context, exposes run(kind, stage, workflow)
-  - invoke_agent: convenience wrapper used by run.py
-  - Stub agents return completed status with a summary noting they are stubs.
-    No real work is done — the goal is to prove the CLI pipeline works.
+  - ``AgentKind``: enum of all SDLC roles (shared via ``shared.py``)
+  - ``AgentRunner``: holds project context, exposes ``run(kind, stage, workflow)``
+  - ``invoke_agent``: convenience wrapper used by ``run.py``
+  - ``SkillRegistry``: maps ``AgentKind`` -> ``BaseSkill``
+  - ``DeepSeekClient``: abstraction over the DeepSeek API
+  - Stub agents return completed status noting they are stubs.
+  - Real skills call DeepSeek, validate against schema, write artifacts.
 """
 
 from __future__ import annotations
 
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
-# ---------------------------------------------------------------------------
-# AgentKind
-# ---------------------------------------------------------------------------
-
-
-class AgentKind(Enum):
-    """Every SDLC role that the factory can dispatch."""
-
-    ANALYST = "analyst"
-    ARCHITECT = "architect"
-    PLANNER = "planner"
-    DEVELOPER = "developer"
-    TESTER = "tester"
-    SECURITY = "security"
-    REVIEWER = "reviewer"
-    DEPLOYER = "deployer"
-
+from ..shared import AgentKind
+from ..deepseek import DeepSeekClient
+from ..skills import BaseSkill, SkillRegistry, AnalystSkill
+from ..context_assembler import build_context
 
 # ---------------------------------------------------------------------------
 # AgentRunner
@@ -47,47 +33,82 @@ class AgentKind(Enum):
 
 
 class AgentRunner:
-    """Holds project context and dispatches agent runs.
+    """Holds project context and dispatches agent runs via skills.
 
-    Today every run is a stub. When real agents land (Steps 4-11), each
-    kind gets its own implementation and this class delegates to it.
+    Uses ``SkillRegistry`` to look up the skill for each ``AgentKind``.
+    If no skill is registered, returns a stub result.
+
+    When a ``DeepSeekClient`` is attached, skills that need it will call
+    the API. Otherwise skills may fall back to stub behaviour or raise.
     """
 
-    def __init__(self, project_root: Path) -> None:
+    def __init__(self, project_root: Path, client: DeepSeekClient | None = None) -> None:
         self.project_root = project_root.resolve()
-        self._stub_agents: dict[AgentKind, type[StubAgent]] = {
-            AgentKind.ANALYST:   StubAnalyst,
-            AgentKind.ARCHITECT: StubArchitect,
-            AgentKind.PLANNER:   StubPlanner,
-            AgentKind.DEVELOPER: StubDeveloper,
-            AgentKind.TESTER:    StubTester,
-            AgentKind.SECURITY:  StubSecurity,
-            AgentKind.REVIEWER:  StubReviewer,
-            AgentKind.DEPLOYER:  StubDeployer,
-        }
+        self.client = client or self._create_client_from_env()
+        self.registry = SkillRegistry()
+        self._seed_skills()
 
-    def run(self, kind: AgentKind, stage: str, workflow: Any, **kwargs: Any) -> dict[str, Any]:
-        """Run the agent for the given stage. Returns a contract-shaped dict."""
-        agent_cls = self._stub_agents.get(kind)
-        if agent_cls is None:
+    def _create_client_from_env(self) -> DeepSeekClient:
+        """Create a DeepSeekClient from .env in the project root."""
+        return DeepSeekClient(project_root=self.project_root)
+
+    def _seed_skills(self) -> None:
+        """Register built-in skills. Extend here as new skills land."""
+        if self.client is None:
+            # Without a client, we can still register skills but they won't
+            # be able to call DeepSeek. For now, only register the analyst
+            # when a client is available so that run.py still works without
+            # API key configured.
+            return
+        self.registry.register(AgentKind.ANALYST, AnalystSkill(self.client))
+
+    def run(
+        self,
+        kind: AgentKind,
+        stage: str,
+        workflow: Any,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Run the skill for the given stage.
+
+        Returns a contract-shaped dict.
+        """
+        skill = self.registry.get_skill(kind)
+        if skill is None:
             return {
                 "status": "blocked",
-                "summary": f"No agent implementation for {kind.value}",
+                "summary": f"No skill implementation for {kind.value}",
                 "requires_human_approval": False,
                 "artifacts": [],
-                "findings": [{"severity": "info", "title": "No agent", "description": f"Agent kind {kind.value} has no implementation"}],
+                "findings": [
+                    {
+                        "severity": "info",
+                        "title": "No skill",
+                        "description": f"Agent kind {kind.value} has no registered skill",
+                    }
+                ],
             }
-        agent = agent_cls(self.project_root, workflow, stage, **kwargs)
-        return agent.run()
+
+        # Build context package for the skill.
+        ctx_package = build_context(self.project_root)
+        ctx_package["workflow"] = {
+            "feature": getattr(workflow, "feature", None),
+            "requirement": getattr(workflow, "requirement", None),
+            "workflow_id": getattr(workflow, "workflow_id", None),
+            "status": getattr(workflow, "status", None),
+            "current_stage": getattr(workflow, "current_stage", None),
+        }
+
+        return skill.execute(ctx_package)
 
 
 # ---------------------------------------------------------------------------
-# Stub agents
+# Stub agents (kept for fallback when no skill is registered)
 # ---------------------------------------------------------------------------
 
 
 class StubAgent:
-    """Base stub — every real agent will subclass this and override run()."""
+    """Base stub — returned when no skill is registered for a kind."""
 
     def __init__(self, project_root: Path, workflow: Any, stage: str, **kwargs: Any) -> None:
         self.project_root = project_root
@@ -97,113 +118,12 @@ class StubAgent:
     def run(self) -> dict[str, Any]:
         return {
             "status": "completed",
-            "summary": f"{self.stage} stage — stub ran, no real work done",
+            "summary": f"{self.stage} stage — skill not yet implemented",
             "output_path": None,
             "requires_human_approval": False,
             "artifacts": [],
             "findings": [],
         }
-
-
-class StubAnalyst(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Analysis stage (stub): requirement received, no ambiguity found, ready for architecture",
-            "output_path": str(self.project_root / ".ai" / "reports" / "analysis-stub.json"),
-            "requires_human_approval": False,
-            "artifacts": [{"path": ".ai/reports/analysis-stub.json", "type": "document"}],
-            "findings": [],
-        }
-
-
-class StubArchitect(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Architecture stage (stub): clean architecture proposed, no major decisions needed",
-            "output_path": str(self.project_root / ".ai" / "reports" / "design-stub.json"),
-            "requires_human_approval": False,
-            "artifacts": [{"path": ".ai/reports/design-stub.json", "type": "document"}],
-            "findings": [],
-        }
-
-
-class StubPlanner(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Planning stage (stub): 3 tasks planned, no dependencies blocking",
-            "output_path": str(self.project_root / ".ai" / "reports" / "plan-stub.json"),
-            "requires_human_approval": False,
-            "artifacts": [{"path": ".ai/reports/plan-stub.json", "type": "document"}],
-            "findings": [],
-        }
-
-
-class StubDeveloper(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Development stage (stub): code generation not implemented yet",
-            "output_path": None,
-            "requires_human_approval": False,
-            "artifacts": [],
-            "findings": [],
-        }
-
-
-class StubTester(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Testing stage (stub): no tests run, implementation not yet available",
-            "output_path": None,
-            "requires_human_approval": False,
-            "artifacts": [],
-            "findings": [],
-        }
-
-
-class StubSecurity(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Security stage (stub): no scans run, pipeline not ready",
-            "output_path": None,
-            "requires_human_approval": False,
-            "artifacts": [],
-            "findings": [],
-        }
-
-
-class StubReviewer(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Review stage (stub): no diff to review",
-            "output_path": None,
-            "requires_human_approval": False,
-            "artifacts": [],
-            "findings": [],
-        }
-
-
-class StubDeployer(StubAgent):
-    def run(self) -> dict[str, Any]:
-        return {
-            "status": "completed",
-            "summary": "Deployment stage (stub): no deployment target configured",
-            "output_path": None,
-            "requires_human_approval": False,
-            "artifacts": [],
-            "findings": [],
-        }
-
-
-# ---------------------------------------------------------------------------
-# invoke_agent — convenience wrapper used by run.py
-# ---------------------------------------------------------------------------
 
 
 def invoke_agent(
@@ -213,5 +133,5 @@ def invoke_agent(
     workflow: Any,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Run an agent for a stage. Thin wrapper around AgentRunner.run()."""
+    """Run an agent for a stage. Thin wrapper around ``AgentRunner.run()``."""
     return runner.run(kind, stage, workflow, **kwargs)
