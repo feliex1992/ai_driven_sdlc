@@ -285,7 +285,12 @@ def main(argv: list[str] | None = None) -> int:
         store.save(wf)
 
         try:
-            result = invoke_agent(runner, _agent_kind_for(stage_key), stage_key, wf)
+            result = invoke_agent(
+                runner=runner,
+                kind=_agent_kind_for(stage_key),
+                stage=stage_key,
+                workflow=wf,
+            )
         except Exception as exc:
             print(f"Error in {stage_name}: {exc}", file=sys.stderr)
             wf.stages[stage_key].status = "blocked"
