@@ -25,7 +25,7 @@ FOUNDATION
 │
 UNDERSTANDING
 ├── STEP 2     Context Engine                ✅
-├── STEP 3     AI CLI                        ◑ (partial — `ai context scan` only)
+├── STEP 3     AI CLI                        ✅
 │
 │
 SDLC INTELLIGENCE
@@ -310,57 +310,141 @@ git
 
 Vector/RAG bisa datang belakangan.
 
-## STEP 3 — AI CLI
+## STEP 3 — AI CLI ✅
 
-Goal: kita punya interface utama untuk berinteraksi dengan AI Software Factory.
+**Status: IMPLEMENTED.** Complete CLI control plane with workflow management, context scanning, and 8 single-stage commands — one per SDLC stage.
 
-CLI is partially built — `ai context scan` works. The full envisioned CLI
-(`ai analyze`, `ai design`, `ai plan`, `ai implement`, `ai test`,
-`ai security`, `ai review`, `ai deploy`, `ai run <feature>`) is still ahead.
-
-Misalnya:
+### Yang sudah ada
 
 ```text
+src/SoftwareFactory/SDLC/
+├── workflow.py              Workflow model, WorkflowStore, STAGES, STAGE_LABELS
+└── Agents/
+    ├── __init__.py          exports AgentRunner, AgentKind, invoke_agent
+    └── runner.py            AgentRunner, AgentKind enum (8 agents), invoke_agent() stub
+
+src/SoftwareFactory/Context/CLI/
+├── __init__.py              delegates to run.main()
+├── __main__.py              python -m entry point
+└── run.py                   full CLI parser + dispatch
+```
+
+### Perintah yang tersedia
+
+```text
+ai context scan <path>       Scan repo → .ai/context/*.json + summary
+ai status                     Show active workflow state
+ai init <feature> <req>      Start new workflow
+ai run <feature> <req>       Run full pipeline (all 8 stages)
+ai run <feature> <req> --stages s1 s2 s3   Run selected stages only
+ai analyze                    Run analysis stage (Analyst Agent)
+ai design                     Run architecture stage (Architect Agent)
+ai plan                       Run planning stage (Planner Agent)
+ai implement                  Run development stage (Developer Agent)
+ai test                       Run testing stage (Test Agent)
+ai security                   Run security stage (Security Agent)
+ai review                     Run code review stage (Reviewer Agent)
+ai deploy                     Run deployment stage (Deployer Agent)
+```
+
+### 8 Workflow stages
+
+```text
+analyze    → Analyst Agent    requirement → analysis.json
+design     → Architect Agent  analysis + context → design.json
+plan       → Planner Agent    design → task.json
+implement  → Developer Agent  task → code + implementation.json
+test       → Test Agent       implementation → test results + test.json
+security   → Security Agent   code + findings → security.json
+review     → Review Agent     diff + context → review.json
+deploy     → Deployer Agent   ready → deployed
+```
+
+### Contoh penggunaan
+
+```bash
+# Mulai workflow baru
+ai init "membership freeze" "Fitur freeze untuk member tidak aktif"
+
+# Lihat status
+ai status
+
+# Output:
+# Workflow: WF-2026-001
+# Feature  : membership freeze
+# Status   : in_progress
+#
+# ✓ Analysis       requirement received, no ambiguity
+# ✓ Architecture   clean architecture proposed
+# ✓ Planning       7 tasks generated
+# → Development    pending
+# ○ Testing        pending
+# ○ Security       pending
+# ○ Review         pending
+# ○ Deployment     pending
+
+# Jalankan stage tunggal
 ai analyze
-ai design
-ai plan
-ai implement
-ai test
-ai security
-ai review
-ai deploy
+
+# Jalankan beberapa stage sekaligus
+ai run "membership freeze" --stages analysis architecture planning
+
+# Resume dari stage yang diblokir
+ai run "membership freeze"
 ```
 
-Dan workflow:
+### Workflow state
+
+Disimpan di `.ai/workflow/<workflow_id>.json`. Struktur:
 
 ```text
-ai run
+Workflow
+  ├── workflow_id      (misal: WF-2026-001)
+  ├── project_root
+  ├── feature
+  ├── requirement
+  ├── status           (pending / in_progress / blocked / completed)
+  ├── current_stage
+  └── stages[]         (8 buah, tiap status: pending / in_progress /
+                        completed / blocked)
 ```
 
-Atau:
+### Agent Runner
 
 ```text
-ai feature "membership freeze"
+AgentRunner
+  └── invoke_agent(kind, stage, workflow) → dict
+        ├── status: "completed" | "blocked"
+        ├── summary: str
+        ├── output_path: str
+        └── findings: list
 ```
 
-CLI akan menjadi control plane.
+invoke_agent saat ini adalah stub — stage dilewatkan dan menghasilkan output terstruktur sesuai contract STEP 1.5. Agent nyata (LLM-backed) akan mengganti stub ini mulai STEP 4.
 
-Contoh:
+### Hubungan dengan Context Engine
 
 ```text
-$ ai status
-
-Workflow: WF-2026-001
-
-✓ Analysis
-✓ Architecture
-✓ Planning
-→ Development
-○ Testing
-○ Security
-○ Review
-○ Deployment
+Context Engine → .ai/context/*.json (8 file: project, language,
+                                       architecture, dependencies,
+                                       database, api, tests, git)
+       ↓
+CLI baca context saat stage dijalankan
+       ↓
+Agent dapat context + workflow state + requirement
 ```
+
+### Pengujian
+
+- 41 pytest tests (STEP 2: models, detectors, integration, CLI)
+- CLI integration: status (no wf), init, status (in_progress), single-stage (analyze, design), status (completed stages), context scan self, full run with --stages — semua pass
+
+### Pekerjaan tersisa (dipindah ke STEP 4+)
+
+- invoke_agent stub → ganti dengan agent nyata (STEP 4 Analyst Agent)
+- Agent output path convention
+- Approval UI (CLI-only sekarang)
+
 
 ## STEP 4 — Analyst Agent
 

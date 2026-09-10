@@ -1,5 +1,8 @@
+README.md
 pyproject.toml
 src/SoftwareFactory/Context/CLI/__init__.py
+src/SoftwareFactory/Context/CLI/__main__.py
+src/SoftwareFactory/Context/CLI/run.py
 src/SoftwareFactory/Context/Core/__init__.py
 src/SoftwareFactory/Context/Core/detector.py
 src/SoftwareFactory/Context/Detectors/__init__.py
@@ -11,6 +14,18 @@ src/SoftwareFactory/Context/Detectors/filesystem.py
 src/SoftwareFactory/Context/Detectors/git.py
 src/SoftwareFactory/Context/Detectors/language.py
 src/SoftwareFactory/Context/Detectors/test.py
+src/SoftwareFactory/SDLC/config.py
+src/SoftwareFactory/SDLC/context_assembler.py
+src/SoftwareFactory/SDLC/deepseek.py
+src/SoftwareFactory/SDLC/shared.py
+src/SoftwareFactory/SDLC/validator.py
+src/SoftwareFactory/SDLC/workflow.py
+src/SoftwareFactory/SDLC/Agents/__init__.py
+src/SoftwareFactory/SDLC/Agents/runner.py
+src/SoftwareFactory/SDLC/skills/__init__.py
+src/SoftwareFactory/SDLC/skills/analyst.py
+src/SoftwareFactory/SDLC/skills/base.py
+src/SoftwareFactory/SDLC/skills/registry.py
 src/ai_software_factory_context.egg-info/PKG-INFO
 src/ai_software_factory_context.egg-info/SOURCES.txt
 src/ai_software_factory_context.egg-info/dependency_links.txt
